@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+# FreeCAD macro for opening the puzzle.FCStd model.
+# Put this macro in the same folder as puzzle.FCStd, then run it in FreeCAD.
+# Alternatively, choose the FCStd file when prompted.
+
+import os
+import FreeCAD as App
+import FreeCADGui as Gui
+
+def main():
+    macro_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else ""
+    candidate = os.path.join(macro_dir, "puzzle.FCStd")
+
+    if os.path.isfile(candidate):
+        source_path = candidate
+    else:
+        try:
+            from PySide import QtGui
+        except ImportError:
+            from PySide2 import QtWidgets as QtGui
+        source_path, _ = QtGui.QFileDialog.getOpenFileName(
+            None,
+            "Select FreeCAD model",
+            macro_dir or os.path.expanduser("~"),
+            "FreeCAD documents (*.FCStd)"
+        )
+        if not source_path:
+            return
+
+    # Reuse the document if it is already open; otherwise open the source file.
+    doc = None
+    for opened in App.listDocuments().values():
+        if getattr(opened, "FileName", "") and os.path.abspath(opened.FileName) == os.path.abspath(source_path):
+            doc = opened
+            break
+
+    if doc is None:
+        doc = App.openDocument(source_path)
+
+    App.setActiveDocument(doc.Name)
+    Gui.activeDocument().activeView().viewAxonometric()
+    Gui.activeDocument().activeView().fitAll()
+    doc.recompute()
+
+main()
